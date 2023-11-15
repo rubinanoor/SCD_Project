@@ -54,6 +54,63 @@ public class DocumentDao {
 }
 
     public boolean saveDocument(Document document, List<DocumentElement> documentElements){
+        boolean saved = false;
+        try(Connection connection = getConnection()){
+            connection.setAutoCommit(false);
+            
+            //String username = document.getOwner().getUsername();
+            PreparedStatement statement = connection.prepareCall("UPDATE documents SET last_modified_date = ?, color = ?, word_count = ?, line_count = ? WHERE document_id = ?");
+            statement.setDate(1, new java.sql.Date(System.currentTimeMillis())); 
+            statement.setString(2, document.getColor().toString()); 
+            statement.setInt(3, document.getWordCount());
+            statement.setInt(4, document.getLineCount());
+            statement.setInt(5, document.getDocid());
+            int rowsInserted = statement.executeUpdate();
+            if(rowsInserted > 0){
+                for(int i=0;i < document.getDocumentElements().size();i++){
+                    DocumentElement docElement = document.getDocumentElements().get(i);
+                    
+                    PreparedStatement textElementStatement = connection.prepareStatement("INSERT INTO TextElement (document_id, content, start, end, font, font_size, is_bold, is_italic, foreground_color) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    textElementStatement.setInt(1, document.getDocid());
+                    textElementStatement.setString(2, docElement.getContent());
+                    textElementStatement.setInt(3, docElement.getStart());
+                    textElementStatement.setInt(4, docElement.getEnd());
+                    textElementStatement.setString(5, docElement.getFontFamily());
+                    textElementStatement.setInt(6, docElement.getFontSize());
+                    textElementStatement.setBoolean(7, docElement.isBold());
+                    textElementStatement.setBoolean(8, docElement.isItalic());
+                    textElementStatement.setString(9, docElement.getFontColor().toString());
+
+                    int result = textElementStatement.executeUpdate();
+                    if(result > 0){
+                        saved = true;
+                    }
+                    else{
+                        saved = false;
+                        break;
+                    }
+                
+                }
+                
+                if(saved == false){
+                    try {
+                        if (connection != null) {
+                        connection.rollback();
+                        }
+                    } catch (SQLException ex) {
+                        ex.printStackTrace();
+                        return false;
+                      }
+                    }
+                else{
+                    connection.commit();
+                    return true;
+                }
+            }
+        }catch(SQLException e){
+            e.printStackTrace();
+            return false;
+        }
         return false;
     }
     private boolean documentExists(Connection connection, String documentName, String username) throws SQLException {

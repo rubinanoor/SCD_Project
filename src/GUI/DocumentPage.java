@@ -7,43 +7,43 @@ import java.awt.event.*;
 import java.io.File;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import BusinessLayer.*;
-import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import javax.swing.text.StyleConstants;
+
 
 public class DocumentPage {
     private JFrame mainframe;
     private JTextPane textPane;
     private BusinessLayer.Document document;
-    private AttributeSet lastStyle = null;
-    private boolean saved = false;
-    private DocumentElement docElement = null;
-    private int currentPosition = -1;
-    private HashMap<DocumentElement, Range> elementRanges = new HashMap<>();
     private User user = null;
+    private boolean saved = false;
     
+    //database things
+    //word count
+    //line count
+    //last modified date    
+
     public void setDocument(BusinessLayer.Document doc, User user) {
         this.user = user;
         this.document = doc;
         this.document.setOwner(this.user);
     }
-    
-    public int incrementPosition(){
-        currentPosition++;
-        return currentPosition;
-    }
-    
 
     public DocumentPage() {
+        //temp
+//        this.user = new User();
+//        this.document = new BusinessLayer.Document();
+//        this.document.setOwner(this.user);
+
         mainframe = new JFrame();
         textPane = new JTextPane();
-        lastStyle = textPane.getStyledDocument().getCharacterElement(0).getAttributes();
-
+        
         JToolBar toolBar = new JToolBar();
         toolBar.setFloatable(false);
         toolBar.setPreferredSize(new Dimension(toolBar.getPreferredSize().width, 50));
         addFormattingButtons(toolBar);
         addSaveButton();
-        
-
         
         toolBar.setBackground(new Color(0, 102, 102));
         mainframe.add(toolBar, BorderLayout.NORTH);
@@ -59,8 +59,12 @@ public class DocumentPage {
             public void windowClosing(WindowEvent e) {
                 int option = JOptionPane.showConfirmDialog(mainframe, "Do you want to save changes before closing?", "Confirm", JOptionPane.YES_NO_CANCEL_OPTION);
                 if (option == JOptionPane.YES_OPTION) {
-                    saveDocument();
-                    mainframe.dispose();
+                    if(saveDocument()){
+                       mainframe.dispose();
+                    }
+                    else{
+                        JOptionPane.showMessageDialog(mainframe, "Unable to save the document.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
                 } else if (option == JOptionPane.NO_OPTION) {
                     mainframe.dispose();
                 }
@@ -172,19 +176,11 @@ public class DocumentPage {
             StyleConstants.setBold(style, true);
 
             doc.setCharacterAttributes(selectionStart, selectionEnd - selectionStart, style, false);
-            AttributeSet currentStyle = doc.getCharacterElement(selectionStart).getAttributes();
-            docElement.setStyle(currentStyle);
-
-            // Update the range for the new element
-            elementRanges.put(docElement, new Range(selectionStart, selectionEnd));
-
         }
     });
-    headingButton.setMaximumSize(new Dimension(120, 30));
-    toolBar.add(headingButton);
+        headingButton.setMaximumSize(new Dimension(120, 30));
+        toolBar.add(headingButton);
 }
-
-
         toolBar.addSeparator(new Dimension(5, 0));
 
         JButton bulletPointsButton = new JButton("Bullet Points");
@@ -219,116 +215,290 @@ public class DocumentPage {
         tableButton.setMaximumSize(new Dimension(120, 30));
         toolBar.add(tableButton);
         toolBar.addSeparator(new Dimension(5, 0));
-          
-        textPane.addKeyListener(new KeyAdapter() {
-        @Override
-       public void keyTyped(KeyEvent e) {
-                char typedChar = e.getKeyChar();
-                int caretPosition = textPane.getCaretPosition();
-
-                javax.swing.text.Document styledDocument = textPane.getStyledDocument();
-                Element paragraphElement = ((StyledDocument) styledDocument).getParagraphElement(caretPosition);
-                AttributeSet currentStyle = paragraphElement.getAttributes();
-
-                if (docElement == null || !styleEquals(lastStyle, currentStyle)) {
-                    docElement = new TextElement(document, incrementPosition());
-                    document.insertElement(docElement);
-                    lastStyle = currentStyle;
-                    docElement.setStyle(currentStyle);
-
-                    // Store the range of positions for the new element
-                    elementRanges.put(docElement, new Range(caretPosition, caretPosition));
-                } else {
-                    // Update the end position for the existing element
-                    Range range = elementRanges.get(docElement);
-                    range.setEnd(caretPosition);
-                }
-
-                System.out.println("CON: "+docElement.getContent());
-                docElement.setContent(docElement.getContent() + typedChar);
-            }
-        });
     }
     
-    private boolean styleEquals(AttributeSet style1, AttributeSet style2) {
-        return style1.equals(style2);
-    }
+    private boolean saveDocument(){
+        List<DocumentElement> elements = new ArrayList<>();
 
+        StyledDocument styledDoc = textPane.getStyledDocument();
+        Element rootElement = styledDoc.getDefaultRootElement();
+        
+//        System.out.println("RootElement: " + rootElement);
+//        System.out.println("RootElement Name: " + rootElement.getName());
+//        System.out.println("RootElement Document: " + rootElement.getDocument());
+//        System.out.println("RootElement AttributeSet: " + rootElement.getAttributes());
+//        
+            for (int i = 0; i < rootElement.getElementCount(); i++) {
+                Element element = rootElement.getElement(i);
+                int start = element.getStartOffset();
+                int end = element.getEndOffset();
+                String content = "";
+
+                try {
+                    content = styledDoc.getText(start, end - start);
+                } catch (BadLocationException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(mainframe, "Fatel Error Occured", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+                System.out.println("Element Content AT DocumentPAGE: " + content);
+
+//                System.out.println(element.getName());
+//                System.out.println(element.getClass());
+//                System.out.println(AbstractDocument.ContentElementName);
+//                System.out.println(element.getAttributes().getAttribute(StyleConstants.NameAttribute));
+//                System.out.println("\n\nStyledDocument: " + elements.size());
+                
+                if (isBulletPoint(content)) {
+                  DocumentElement bulletElement = new TextElement(document);
+                  bulletElement.setContent("\u2022 " + content.substring(2));
+                  bulletElement.setRange(start, end);
+                  bulletElement.setStyle(element.getAttributes());
+                  document.insertElement(bulletElement);
+                  //elements.add(bulletElement);
+                  System.out.println("Bullet Element Added");
+              } else {
+                  DocumentElement textElement = new TextElement(document);
+                  textElement.setContent(content);
+                  textElement.setRange(start, end);
+                  textElement.setStyle(element.getAttributes());
+                  document.insertElement(textElement);
+                  //elements.add(textElement);
+                  System.out.println("Text Element Added");
+              }
+            }
+            //document.setDocumentElements(elements);
+            //document.printDocumentInfo();
+            //color
+            //last modified date
+            //document.setLastModifiedDate();
+            
+            //line count
+            //Add function to get line count
+            document.setLineCount(0);
+            
+            //word count
+            //Add function to get word count
+            document.setWordCount(0);
+            
+            //favourite
+            //Add function to set Favourite
+            document.setFavourite(false);
+            
+            if(document.saveDocument()){
+                //then dispose
+                saved = true;
+                return true;
+            }
+            
+        return false;
+    }
     private void addSaveButton() {
     JButton saveButton = new JButton("Save");
     saveButton.addActionListener(new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent e) {
-            saveDocument();
+            saveDocument();  
         }
     });
-
-    // Add the Save button to the bottom of the mainPanel
     mainframe.add(saveButton, BorderLayout.SOUTH);
 }
-
-    private void saveDocument() {
-        
-//    for (DocumentElement element : elementRanges.keySet()) {
-//        Range range = elementRanges.get(element);
-//        if (document.getDocumentElements().contains(element)) {
-//            element.setRange(range.getStart(), range.getEnd());
+    // Check the type of the element and assign the appropriate name
+//    if (StyleConstants.NameAttribute.equals(element.getAttributes().getAttribute(StyleConstants.NameAttribute))) {
+//        String textContent = "";
+//        try {
+//            textContent = styledDoc.getText(start, end - start);
+//
+//            if (isBulletPoint(textContent)) {
+//                TextElement bulletElement = new TextElement(document);
+//                bulletElement.setContent("\u2022 " + textContent.substring(2));
+//                bulletElement.setRange(start, end);
+//                bulletElement.setStyle(element.getAttributes());
+//                elements.add(bulletElement);
+//                System.out.println("Bullet Element Added");
+//            } else {
+//                TextElement textElement = new TextElement(document);
+//                textElement.setContent(textContent);
+//                textElement.setRange(start, end);
+//                textElement.setStyle(element.getAttributes());
+//                elements.add(textElement);
+//                System.out.println("Text Element Added");
+//            }
+//        } catch (BadLocationException ex) {
+//            ex.printStackTrace();
 //        }
+//    } else if (element.getName().equals(StyleConstants.ComponentElementName)) {
+//        // Handle ComponentElement (Image)
+//        ImageElement imageElement = createImageElement(styledDoc, element);
+//        elements.add(imageElement);
+//        System.out.println("Image Element Added");
 //    }
-//    if(document.saveDocument()){
-//        JOptionPane.showMessageDialog(mainframe, "Document saved successfully.", "Save", JOptionPane.INFORMATION_MESSAGE);
-//    }
+//}
+
+
+        // Print information about the extracted text and elements
+      
+     //   System.out.println("Content: " + content);
+
+//        for (DocumentElement element : elements) {
+//            element.displayDocumentElement();
+//        }
+
+        
+        
+        
+//        traverseElements(rootElement, styledDoc, elements);
+//
+//          for (DocumentElement element : elements) {
+//            System.out.println("\nElement:");
+//            System.out.println("Text: " + element.getText());
+//            System.out.println("Start Position: " + element.getStart());
+//            System.out.println("End Position: " + element.getEnd());
+//            System.out.println("Style Information:");
+//            System.out.println("  Font Family: " + element.getFontFamily());
+//            System.out.println("  Font Size: " + element.getFontSize());
+//            System.out.println("  Text Color: " + element.getTextColor());
+//            System.out.println("  Bold: " + element.isBold());
+//            System.out.println("  Italic: " + element.isItalic());
+//        }
+        // Print information about the extracted text
+//        System.out.println("\n\nStyledDocument: ");
+//        System.out.println("Content: " + getTextFromDocument(styledDoc));
+//        System.out.println(styledDoc.getText(0, 0));
+//        
+//        System.out.println("Document content: " + getTextFromDocument(plainDoc));
+//        System.out.println("Root Element Name: " + rootElement.getName());
+         //   System.out.println("HH: "+ textPane.get);
+          /*
+    StyledDocument doc = textPane.getStyledDocument();
+  // StyledDocument doc = textPane.getDocument();
+    Element root = doc.getDefaultRootElement();
+
     
-    for (DocumentElement element : elementRanges.keySet()) {
-        Range range = elementRanges.get(element);
-        if (document.getDocumentElements().contains(element)) {
-            element.setRange(range.getStart(), range.getEnd());
-        }
-    }
-
-    // Assuming you want to print the content and styling to the console.
-    System.out.println("Full Text Content:");
-
-    StyledDocument styledDoc = textPane.getStyledDocument();
-    ElementIterator iterator = new ElementIterator(styledDoc);
-    Element element;
-
-    while ((element = iterator.next()) != null) {
+    for (int i = 0; i < root.getElementCount(); i++) {
+        Element element = root.getElement(i);
+        AttributeSet attrs = element.getAttributes();
         int start = element.getStartOffset();
         int end = element.getEndOffset();
+//              try {
+//                  System.out.print(+"\n\n");
+                  System.out.println(element.getDocument().getRootElements());//.getText(start, end - start));
+                  Object ele  = element.getDocument().getClass();
+                  
+                  System.out.println(ele);
+//                  
+                  
+                  */
+                  
+                 //Check the type of the element and assign the appropriate name
 
+//        Document document = element.getDocument();
+
+    /*             
+       if (element.getDocument() != null) {
+           switch (elementName) {
+               case AbstractDocument.ContentElementName:
+                   String textContent = "";
+               try {
+                   textContent = getTextContent(doc, element);
+               } catch (BadLocationException ex) {
+                   Logger.getLogger(DocumentPage.class.getName()).log(Level.SEVERE, null, ex);
+               }
+                   if (isBulletPoint(textContent)) {
+                       TextElement bulletElement = new TextElement(document);
+                       bulletElement.setContent("\u2022 " + textContent.substring(2));
+                       bulletElement.setRange(start,end);
+                       bulletElement.setStyle(attrs);
+                      // setStyleInfo(bulletElement, attrs);
+                       elements.add(bulletElement);
+                       System.out.print("ELEMENT ADDED\n\n");
+                   } else {
+                       TextElement textElement = new TextElement(document);
+                       textElement.setContent(textContent);
+                       textElement.setRange(start,end);
+                       textElement.setStyle(attrs);
+                       //setStyleInfo(textElement, attrs);
+                       elements.add(textElement);
+                       System.out.print("ELEMENT ADDED\n\n");
+                   }
+                   break;
+
+               case StyleConstants.ComponentElementName:
+                   ImageElement imageElement = createImageElement(doc, element);
+                   elements.add(imageElement);
+                   break;
+
+               default:
+                   break;
+           }
+        }
+//             }element catch (BadLocationException ex) {
+//                  Logger.getLogger(DocumentPage.class.getName()).log(Level.SEVERE, null, ex);
+//              }
+      */  
+    
+   
+
+
+    private String getTextFromDocument(javax.swing.text.Document doc) {
         try {
-            String content = styledDoc.getText(start, end - start);
-            AttributeSet attributes = element.getAttributes();
-            System.out.println("Content: " + content);
-            System.out.println("Styling: " + attributes.toString());
+            return doc.getText(0, doc.getLength());
         } catch (BadLocationException e) {
-            e.printStackTrace();
+            return "";
         }
     }
 
-    if (document.saveDocument()) {
-        JOptionPane.showMessageDialog(mainframe, "Document saved successfully.", "Save", JOptionPane.INFORMATION_MESSAGE);
+private boolean isBulletPoint(String textContent) {
+    return textContent.startsWith("\u2022 ");
+}
+
+  
+private String getTextContent(StyledDocument doc, Element element) throws BadLocationException {
+    int start = element.getStartOffset();
+    int end = element.getEndOffset();
+    return doc.getText(start, end - start);
+}
+
+
+private ImageElement createImageElement(StyledDocument doc, Element element) {
+    ImageElement imageElement = new ImageElement(document);
+
+    AttributeSet attrs = element.getAttributes();
+    Element imageElementStart = doc.getCharacterElement(element.getStartOffset());
+    Element imageElementEnd = doc.getCharacterElement(element.getEndOffset() - 1);
+    int imageStartOffset = imageElementStart.getStartOffset();
+    int imageEndOffset = imageElementEnd.getEndOffset();
+
+    // Set the content of the image element (you might want to get the image data from the file)
+    imageElement.setContent("Image Content");
+
+    // Set the style information
+    imageElement.setStyle(attrs);
+
+    // Retrieve the ImageIcon from the element
+    Object imageIconObj = StyleConstants.getComponent(attrs);
+    if (imageIconObj instanceof ImageIcon) {
+        ImageIcon imageIcon = (ImageIcon) imageIconObj;
+
+        // Get the width and height of the image
+        int imageWidth = imageIcon.getIconWidth();
+        int imageHeight = imageIcon.getIconHeight();
+
+        // Set the size information
+        imageElement.setSize(new Dimension(imageWidth, imageHeight));
     }
 
+    return imageElement;
 }
 
     private void setFontSize(int size) {
         MutableAttributeSet attrs = textPane.getInputAttributes();
         StyleConstants.setFontSize(attrs, size);
         textPane.setCharacterAttributes(attrs, false);
-        if (docElement != null) {
-        docElement.setStyle(attrs);
-        }
     }
 
     private void setFontName(String fontName) {
         MutableAttributeSet attrs = textPane.getInputAttributes();
         StyleConstants.setFontFamily(attrs, fontName);
-        textPane.setCharacterAttributes(attrs, false);
-        if (docElement != null) {
-        docElement.setStyle(attrs);
-        }
     }
 
     private void setBold() {
@@ -340,12 +510,6 @@ public class DocumentPage {
         StyleConstants.setBold(style, true);
 
         doc.setCharacterAttributes(selectionStart, selectionEnd - selectionStart, style, false);
-        
-        if (docElement != null) {
-            Element charElement = doc.getCharacterElement(selectionStart);
-            AttributeSet attributes = charElement.getAttributes();
-            docElement.setStyle(attributes);
-        }
     }
 
     private void setItalic() {
@@ -357,11 +521,6 @@ public class DocumentPage {
         StyleConstants.setItalic(style, true);
 
         doc.setCharacterAttributes(selectionStart, selectionEnd - selectionStart, style, false);
-        if (docElement != null) {
-            Element charElement = doc.getCharacterElement(selectionStart);
-            AttributeSet attributes = charElement.getAttributes();
-            docElement.setStyle(attributes);
-        }
     }
 
     private void chooseColor() {
@@ -371,9 +530,9 @@ public class DocumentPage {
             StyleConstants.setForeground(attrs, selectedColor);
             textPane.setCharacterAttributes(attrs, false);
             
-            if (docElement != null) {
-                docElement.setStyle(attrs);
-            }
+//            if (docElement != null) {
+//                docElement.setStyle(attrs);
+//            }
 
         }
     }
@@ -386,14 +545,14 @@ public class DocumentPage {
     // Insert a bullet point at the beginning of the line
     try {
         doc.insertString(selectionStart, "\u2022 ", null); // Unicode for bullet point
-        docElement = new TextElement(document, incrementPosition());
-        document.insertElement(docElement);
+      //  docElement = new TextElement(document, incrementPosition());
+      //  document.insertElement(docElement);
         AttributeSet currentStyle = doc.getCharacterElement(selectionStart).getAttributes();
-        docElement.setStyle(currentStyle);
-        docElement.setContent("\u2022 ");
+      //  docElement.setStyle(currentStyle);
+        //docElement.setContent("\u2022 ");
 
         // Update the range for the new element
-        elementRanges.put(docElement, new Range(selectionStart, selectionStart + 2));
+        //elementRanges.put(docElement, new Range(selectionStart, selectionStart + 2));
 
     } catch (BadLocationException e) {
         e.printStackTrace();
@@ -426,16 +585,16 @@ public class DocumentPage {
                         textPane.insertIcon(scaledIcon);
 
                         // Create and store the ImageElement
-                        docElement = new ImageElement(document, incrementPosition());
-                        document.insertElement(docElement);
+                       // docElement = new ImageElement(document, incrementPosition());
+                        //document.insertElement(docElement);
 
-                        ImageElement imageElement = (ImageElement) docElement;
-                        imageElement.setSize(new Dimension(width, height));
-                        imageElement.setImageDataFromFile(file.toPath());
+                       // ImageElement imageElement = (ImageElement) docElement;
+                       // imageElement.setSize(new Dimension(width, height));
+                        //imageElement.setImageDataFromFile(file.toPath());
 
                         // Store the range of positions for the new element
-                        int caretPosition = textPane.getCaretPosition();
-                        elementRanges.put(docElement, new Range(caretPosition, caretPosition));
+                       // int caretPosition = textPane.getCaretPosition();
+                     //   elementRanges.put(docElement, new Range(caretPosition, caretPosition));
 
                     } catch (NumberFormatException | ArrayIndexOutOfBoundsException ex) {
                         JOptionPane.showMessageDialog(mainframe, "Invalid size format. Please use the format 'widthxheight'.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -448,41 +607,13 @@ public class DocumentPage {
     private void addTable() {
         // Implement table insertion logic here
     }
-    private void deleteElement() {
-        int caretPosition = textPane.getCaretPosition();
-        for (DocumentElement element : elementRanges.keySet()) {
-            Range range = elementRanges.get(element);
-            if (caretPosition >= range.getStart() && caretPosition <= range.getEnd()) {
-                // Remove the element from the document
-                document.deleteElement(element);
-                // Remove the range entry from the HashMap
-                elementRanges.remove(element);
-                break;
+
+    public static void main(String[] args) {
+        javax.swing.SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                new DocumentPage();
             }
-        }
+        });
     }
-    
-    private static class Range {
-        private int start;
-        private int end;
-
-        public Range(int start, int end) {
-            this.start = start;
-            this.end = end;
-        }
-
-        public int getStart() {
-            return start;
-        }
-
-        public int getEnd() {
-            return end;
-        }
-
-        public void setEnd(int end) {
-            this.end = end;
-        }
-    }
-
 
 }

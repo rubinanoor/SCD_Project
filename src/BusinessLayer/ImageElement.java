@@ -8,8 +8,8 @@ public class ImageElement extends DocumentElement {
     private byte[] imageData;
     private Dimension size;
 
-    public ImageElement(Document doc, int position) {
-        super(doc, position);
+    public ImageElement(Document doc) {
+        super(doc);
     }
 
     public void setImageData(byte[] imageData) {

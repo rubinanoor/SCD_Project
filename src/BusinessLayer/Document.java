@@ -21,6 +21,7 @@ public class Document {
     private List<DocumentElement> documentElements;
     private HashMap<User, Boolean> permissionsList;
     private Date createdDate;
+    private Date lastModifiedDate;
     private int positionTracker = -1;
     DocumentDao documentDao;
 
@@ -31,7 +32,17 @@ public class Document {
         permissionsList = new HashMap<>();  
         createdDate = new Date();
         isFavourite = false;
+        color = Color.WHITE;
     }
+    
+    public void setLastModifiedDate(Date date){
+        lastModifiedDate = date;
+    }
+    
+    public Date getLastModifiedDate(){
+        return lastModifiedDate;
+    }
+    
     public int getPositionTracker(){
         return positionTracker;
     }
@@ -154,14 +165,6 @@ public class Document {
    
     }
     
-    //public void applyStyles(Styles styles){
-        
-    //}
-    
-    public void setDocumentColor(Color color){
-        
-    }
-    
     public void insertElement(DocumentElement element){
         documentElements.add(element);
     }
@@ -183,7 +186,7 @@ public class Document {
     }
     
     public boolean shareDocument(User user){
-    return false;
+        return false;
     }
     
     public boolean setPerviousVersion(Document document){
@@ -198,9 +201,6 @@ public class Document {
         
     }
     
-    public int getDocumentID(){
-        return docid;
-    }
     
     public boolean exportDocument(String exportType){
         return false;
@@ -210,6 +210,41 @@ public class Document {
         return documentDao.saveDocument(this,documentElements);
     }
     
+    public void printDocumentInfo() {
+    System.out.println("Document Information:");
+    System.out.println("Document ID: " + docid);
+    System.out.println("Document Name: " + docName);
+    System.out.println("Color: " + color);
+    System.out.println("Line Count: " + lineCount);
+    System.out.println("Word Count: " + wordCount);
+    System.out.println("Page Count: " + pageCount);
+    System.out.println("Owner: " + owner.getUsername()); // Assuming User class has a getUsername() method
+    System.out.println("Favourite: " + isFavourite);
+    System.out.println("Created Date: " + createdDate);
+    System.out.println("Last Modified Date: " + lastModifiedDate);
+
+//    System.out.println("\nVersion History:");
+//    for (Document version : versionHistory) {
+//        System.out.println("Version ID: " + version.getDocid());
+//        // Print additional version information if needed
+//    }
+
+//    System.out.println("\nShared With:");
+//    for (SharingInfo sharingInfo : sharedWith) {
+//        System.out.println("User: " + sharingInfo.getUser().getUsername() + ", Permission: " + sharingInfo.getPermission());
+//    }
+
+//    System.out.println("\nPermissions List:");
+//    for (User user : permissionsList.keySet()) {
+//        System.out.println("User: " + user.getUsername() + ", Permission: " + permissionsList.get(user));
+//    }
+
+    System.out.println("\nDocument Elements:");
+    for (DocumentElement element : documentElements) {
+        element.displayDocumentElement();
+    }
+}
+
     
 }
 

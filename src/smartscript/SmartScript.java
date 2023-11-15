@@ -10,7 +10,7 @@ public class SmartScript {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-       new HomePage();   
+       new LoginPage().setVisible(true); 
     }
     
 }

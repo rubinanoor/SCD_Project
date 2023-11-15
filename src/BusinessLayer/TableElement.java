@@ -2,11 +2,8 @@ package BusinessLayer;
 //incompleet
 public class TableElement extends DocumentElement {
 
-//    public TableElement(int docID){
-//        super(docID);
-//    }
-    TableElement(Document document,  int position){
-        super(document,position);
+    TableElement(Document document){
+        super(document);
     }
     @Override
     public void addDocumentElement() {

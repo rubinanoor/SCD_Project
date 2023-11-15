@@ -9,13 +9,9 @@ package BusinessLayer;
  * @author Admin
  */
 public class TextElement extends DocumentElement{
-    
-//    public TextElement(int docID){
-//        super(docID);
-//    }
-    
-    public TextElement(Document document, int position){
-        super(document,position);
+
+    public TextElement(Document document){
+        super(document);
         System.out.println("\nText Element Created\n");
     }
     
