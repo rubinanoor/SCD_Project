@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="search">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/Downloads/lucene-8.11.2.zip!/lucene-8.11.2/docs/suggest/org/apache/lucene/search" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
