@@ -22,7 +22,7 @@ public class Main {
             return conn;
 
         }
-        catch(Exception e){
+        catch(Exception  se){
 
         }
         return null;
