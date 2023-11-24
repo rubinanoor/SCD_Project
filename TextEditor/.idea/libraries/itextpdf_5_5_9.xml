@@ -1,0 +1,19 @@
+<component name="libraryTable">
+  <library name="itextpdf-5.5.9">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/JarFiles/itextpdf-5.5.9.jar!/" />
+      <root url="jar://$PROJECT_DIR$/JarFiles/pdfbox-3.0.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/JarFiles/poi-5.2.3.jar!/" />
+      <root url="jar://$PROJECT_DIR$/JarFiles/poi-examples-5.2.3.jar!/" />
+      <root url="jar://$PROJECT_DIR$/JarFiles/poi-excelant-5.2.3.jar!/" />
+      <root url="jar://$PROJECT_DIR$/JarFiles/poi-ooxml-5.2.3.jar!/" />
+      <root url="jar://$PROJECT_DIR$/JarFiles/poi-ooxml-full-5.2.3.jar!/" />
+      <root url="jar://$PROJECT_DIR$/JarFiles/poi-ooxml-lite-5.2.3.jar!/" />
+      <root url="jar://$PROJECT_DIR$/JarFiles/poi-scratchpad-5.2.3.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$PROJECT_DIR$/JarFiles/poi-javadoc-5.2.3.jar!/" />
+    </JAVADOC>
+    <SOURCES />
+  </library>
+</component>
